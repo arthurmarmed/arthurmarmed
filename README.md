@@ -1,6 +1,6 @@
 ## Ola, me chamo Arthur Martins👋
 
-Estudante de Ciência da Computação na C.E.S.A.R School. Sou apaixonado por tecnologia e exploro ativamente o desenvolvimento **front-end** (para interfaces intuitivas) e **back-end** (para sistemas robustos). Sempre em busca de novos conhecimentos e desafios para evoluir como desenvolvedor.
+Estudante de Ciência da Computação na C.E.S.A.R School. Sou apaixonado por tecnologia e exploro ativamente o desenvolvimento **front-end** e **back-end**. Sempre em busca de novos conhecimentos e desafios para evoluir como desenvolvedor.
 
 ---
 
