@@ -7,8 +7,9 @@ Estudante de Ciência da Computação na C.E.S.A.R School. Sou apaixonado por te
 ### 💻 Linguagens:
 - Python
 - HTML
-- CSS
+- C
 - JavaScript
+- Java
 
 ### ⚙️ Plataformas:
 - Arduino
