@@ -20,7 +20,8 @@ yellow emphasis rings. The boy is a Higgsfield image-to-video clip (Seedance 1.5
 python3 music.py                      # assets/music.wav (soft synth bed + click/whoosh SFX)
 python3 key.py assets/character_clip.mp4  # char_frames/*.png (rembg matte + magenta key)
 python3 render.py video_noaudio.mp4   # renders 450 frames
-ffmpeg -i video_noaudio.mp4 -i assets/music.wav -c:v copy -c:a aac -b:a 192k -shortest rede_ipojuca_explainer.mp4
+python3 voice.py assets/voice_take.wav assets/music.wav assets/soundtrack.wav  # voice lines over the music
+ffmpeg -i video_noaudio.mp4 -i assets/soundtrack.wav -c:v copy -c:a aac -b:a 192k -shortest rede_ipojuca_explainer.mp4
 ```
 
 If `char_frames/` is missing, `render.py` uses a static cut-out of the boy as a placeholder.
