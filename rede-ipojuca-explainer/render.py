@@ -232,8 +232,8 @@ CAM_KEYS = [  # (t, (cx, cy, zoom))
     (6.7, (900, 540, 1.04)),
     (8.6, (860, 560, 1.08)),
     (9.3, (880, 560, 1.06)),
-    (10.8, (src_to_world(1230, 0)[0] + 200, src_to_world(0, BAR_H + 720 - CONTENT_Y0)[1], 1.28)),
-    (12.0, (src_to_world(1230, 0)[0] + 200, src_to_world(0, BAR_H + 720 - CONTENT_Y0)[1], 1.28)),
+    (10.8, (src_to_world(1230, 0)[0] + 270, src_to_world(0, BAR_H + 720 - CONTENT_Y0)[1], 1.28)),
+    (12.0, (src_to_world(1230, 0)[0] + 270, src_to_world(0, BAR_H + 720 - CONTENT_Y0)[1], 1.28)),
     (13.3, (900, 470, 1.16)),
     (15.0, (880, 440, 1.22)),
 ]
@@ -297,19 +297,44 @@ CURSOR = make_cursor(1.0)
 CHAR_DIR = os.path.join(HERE, 'char_frames')
 char_files = sorted(glob.glob(os.path.join(CHAR_DIR, '*.png')))
 CHAR_FALLBACK = Image.open(os.path.join(HERE, 'assets', 'char_cut.png')).convert('RGBA')
-CHAR_MAP = os.path.join(HERE, 'char_map.txt')   # optional: one source-frame index per output frame
-char_map = None
-if os.path.exists(CHAR_MAP) and char_files:
-    char_map = [int(x) for x in open(CHAR_MAP).read().split()]
+CHAR_FPS = 24
 
-CHAR_H = 860          # on-screen height of the source character frame (720 px tall source)
-CHAR_CX = 1690        # horizontal centre on screen
+
+def char_src_time(t):
+    """Retime the 8 s character clip onto the four scenes (output t -> clip seconds)."""
+    if t < 3.0:     # skeptical look, then open-hand intro toward the site
+        return lerp(0.0, 3.5, t / 3.0)
+    if t < 7.0:     # points up at the navigation bar
+        return lerp(3.5, 5.5, (t - 3.0) / 4.0)
+    if t < 12.0:    # points left at the service, small back-and-forth while explaining
+        k = (t - 7.0) / 5.0 * 3
+        legs = [(5.5, 6.75), (6.75, 5.9), (5.9, 6.75)]
+        a, b = legs[min(2, int(k))]
+        return lerp(a, b, ease(k - min(2, int(k))))
+    return lerp(6.75, 8.0, ease(seg(t, 12.0, 15.0)) * 0.6 + seg(t, 12.0, 15.0) * 0.4)  # thumbs up
+
+
+_cache = {}
+
+
+def char_frame(i):
+    i = max(0, min(len(char_files) - 1, i))
+    if i not in _cache:
+        if len(_cache) > 8:
+            _cache.clear()
+        _cache[i] = Image.open(char_files[i]).convert('RGBA')
+    return _cache[i]
+
+
+CHAR_H = 760          # on-screen height of the 720 px source frame
+CHAR_CX = 1715        # horizontal centre on screen
 
 
 def character_layer(fi, t):
     if char_files:
-        idx = char_map[fi] if char_map else min(fi, len(char_files) - 1)
-        im = Image.open(char_files[min(idx, len(char_files) - 1)]).convert('RGBA')
+        st = char_src_time(t) * CHAR_FPS
+        i0 = int(st)
+        im = Image.blend(char_frame(i0), char_frame(i0 + 1), st - i0)
         s = CHAR_H / im.height
         im = im.resize((int(im.width * s), CHAR_H), Image.LANCZOS)
         x = int(CHAR_CX - im.width / 2)
