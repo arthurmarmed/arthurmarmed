@@ -208,10 +208,11 @@ def highlights(t):
 
 
 # ---------- camera (world == 1920x1080 layout at zoom 1) ----------
-WIN_W = 1360
+NO_CHARACTER = os.environ.get('NO_CHARACTER') == '1'   # screen-recording-only version
+WIN_W = 1700 if NO_CHARACTER else 1360
 SCALE0 = WIN_W / WIN_SRC_W
 WIN_H = WIN_SRC_H * SCALE0
-WIN_X, WIN_Y = 50, (H - WIN_H) / 2
+WIN_X, WIN_Y = ((W - WIN_W) / 2 if NO_CHARACTER else 50), (H - WIN_H) / 2
 
 
 def src_to_world(px, py):
@@ -237,6 +238,28 @@ CAM_KEYS = [  # (t, (cx, cy, zoom))
     (13.3, (900, 470, 1.16)),
     (15.0, (880, 440, 1.22)),
 ]
+
+
+def at(px, py, z, dy=0.0):
+    """Camera centred on a page point (px, content y) at zoom z, shifted down by dy screen px."""
+    wx, wy = src_to_world(px, BAR_H + py)
+    return (wx, wy + dy / z, z)
+
+
+if NO_CHARACTER:  # the window fills the frame, so zoom straight onto each step
+    CAM_KEYS = [
+        (0.0, (960, 540, 1.0)),
+        (3.0, (960, 540, 1.03)),
+        (4.3, at(989, 119, 1.55, dy=260)),
+        (5.6, at(989, 119, 1.55, dy=260)),
+        (6.7, (960, 540, 1.0)),
+        (8.6, at(700, 440, 1.22)),
+        (9.3, (960, 540, 1.04)),
+        (10.8, at(1230, 482, 1.45)),
+        (12.0, at(1230, 482, 1.45)),
+        (13.3, (960, 540, 1.0)),
+        (15.0, (960, 500, 1.08)),
+    ]
 
 
 def camera(t):
@@ -396,6 +419,8 @@ def render(fi):
         frame.paste(cur, (int(cx), int(cy)), cur)
 
     # character (screen space) with contact shadow
+    if NO_CHARACTER:
+        return finish(frame, t)
     im, (x, y) = character_layer(fi, t)
     shadow = Image.new('L', (W, H), 0)
     ImageDraw.Draw(shadow).ellipse((CHAR_CX - 260, H - 40, CHAR_CX + 260, H + 60), fill=110)
@@ -403,6 +428,10 @@ def render(fi):
     frame.paste(Image.new('RGB', (W, H), (40, 60, 90)), (0, 0), shadow)
     frame.paste(im, (x, y), im)
 
+    return finish(frame, t)
+
+
+def finish(frame, t):
     # very short fade in
     if t < 0.25:
         frame = Image.blend(Image.new('RGB', (W, H), (236, 243, 251)), frame, ease(t / 0.25))

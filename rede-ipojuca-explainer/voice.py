@@ -1,10 +1,12 @@
 """Place the boy's voice lines over his mouth movements and mix them with the music.
 
 usage: python3 voice.py assets/voice_take.wav assets/music.wav assets/soundtrack.wav
+       python3 voice.py assets/narration_take.wav assets/music.wav assets/soundtrack_narrated.wav narrator
 
 The take is one Higgsfield Seed Audio generation ("Benji", pitch +4) with all lines. Each line is cut
 from the take, raised another 4 semitones so he sounds younger, and dropped where his mouth moves.
 """
+import os
 import subprocess
 import sys
 import wave
@@ -25,6 +27,15 @@ LINES = [
 ]
 PITCH = 2 ** (4 / 12)
 
+# Screen-recording-only version: a narrator teaches each step (Benji at his natural pitch).
+# Take times are pause boundaries in the take, matched to the sentences by syllable count.
+NARRATOR_LINES = [
+    (0.38, 2.95, 0.35),   # "Conheça a Rede Ipojuca, seu espaço de cidadania digital."
+    (3.14, 4.33, 4.25),   # "No menu do topo, clique em Categorias." (ends just before the click at 5.6 s)
+    (4.39, 7.98, 7.15),   # "Escolha a área, como Administração Pública, e clique em Acessar no serviço que você precisa."
+    (8.15, 10.15, 12.35), # "Rede Ipojuca: os serviços da prefeitura num só lugar."
+]
+
 
 def read_wav(path):
     with wave.open(path) as w:
@@ -35,14 +46,18 @@ def read_wav(path):
 
 def main():
     take, music, out = sys.argv[1:4]
+    narrator = len(sys.argv) > 4 and sys.argv[4] == 'narrator'
+    lines = NARRATOR_LINES if narrator else LINES
     shifted = take + '.shifted.wav'
-    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', take, '-af',
-                    f'rubberband=pitch={PITCH:.4f}', '-ar', str(SR), '-ac', '2', shifted], check=True)
+    af = 'anull' if narrator else f'rubberband=pitch={PITCH:.4f}'
+    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', take, '-af', af,
+                    '-ar', str(SR), '-ac', '2', shifted], check=True)
     v = read_wav(shifted)
+    os.remove(shifted)
     m = read_wav(music)
     n = int(DUR * SR)
     voice = np.zeros((n, 2), np.float32)
-    for a, b, at in LINES:
+    for a, b, at in lines:
         seg = v[int(a * SR):int(b * SR)].copy()
         fade = int(0.012 * SR)
         ramp = np.linspace(0, 1, fade)[:, None]
